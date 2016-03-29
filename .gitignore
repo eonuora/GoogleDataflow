@@ -11,6 +11,8 @@ target/
 .project
 .settings/
 
+TestFiles/Output
+
 # The build process generates the dependency-reduced POM, but it shouldn't be
 # committed.
 dependency-reduced-pom.xml
