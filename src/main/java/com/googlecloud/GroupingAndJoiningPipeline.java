@@ -10,10 +10,8 @@ import com.google.cloud.dataflow.sdk.transforms.GroupByKey;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
 import com.google.cloud.dataflow.sdk.values.KV;
 import org.apache.avro.reflect.Nullable;
-import org.joda.time.DateTime;
 
-import java.sql.Array;
-import java.util.Comparator;
+import java.io.File;
 
 /**
  * Created by Ekene on 27-Mar-2016.
@@ -62,9 +60,13 @@ public class GroupingAndJoiningPipeline {
 
     public static void main(String[] args) {
 
+
+        String filePath = new File("").getAbsolutePath();
+        System.out.println( filePath );
+
         Pipeline p = Pipeline.create(PipelineOptionsFactory.fromArgs(args).withValidation().create());
 
-        p.apply(TextIO.Read.named("Read File").from("C:\\TestFiles\\FactFinance2.txt"))
+        p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\FactFinance2.txt"))
                 .apply(ParDo.named("Get Word Count").of(new DoFn<String, KV<String, FinancialRecord>>() {
                     @Override
                     public void processElement(ProcessContext c) throws Exception {

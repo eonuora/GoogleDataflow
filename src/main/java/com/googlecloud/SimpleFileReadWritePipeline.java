@@ -20,32 +20,9 @@ import com.google.cloud.dataflow.sdk.Pipeline;
 import com.google.cloud.dataflow.sdk.io.TextIO;
 import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory;
 import com.google.cloud.dataflow.sdk.transforms.*;
-
 import com.google.cloud.dataflow.sdk.values.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-
-/**
- * A starter example for writing Google Cloud Dataflow programs.
- * <p>
- * <p>The example takes two strings, converts them to their upper-case
- * representation and logs them.
- * <p>
- * <p>To run this starter example locally using DirectPipelineRunner, just
- * execute it without any additional parameters from your favorite development
- * environment. In Eclipse, this corresponds to the existing 'LOCAL' run
- * configuration.
- * <p>
- * <p>To run this starter example using managed resource in Google Cloud
- * Platform, you should specify the following command-line options:
- * --project=<YOUR_PROJECT_ID>
- * --stagingLocation=<STAGING_LOCATION_IN_CLOUD_STORAGE>
- * --runner=BlockingDataflowPipelineRunner
- * In Eclipse, you can just modify the existing 'SERVICE' run configuration.
- */
-@SuppressWarnings("serial")
+import java.io.File;
 
 
 public class SimpleFileReadWritePipeline {
@@ -56,34 +33,37 @@ public class SimpleFileReadWritePipeline {
 
     public static void main(String[] args) {
 
+        String filePath = new File("").getAbsolutePath();
+
         Pipeline p = Pipeline.create(PipelineOptionsFactory.fromArgs(args).withValidation().create());
+
         //String[] a = {"Hello", "World!"};
         //p.apply(Create.of(a))
 
-        PCollectionTuple all = p.apply(TextIO.Read.named("Read File").from("C:\\TestFiles\\m.txt"))
+        PCollectionTuple all = p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\words.txt"))
                 .apply(new CountWordsCT());
 
 
-        all.get(allWordsTag).apply(TextIO.Write.named("Write All Words").to("C:\\TestFiles\\Output\\allwords.txt"));
-        all.get(wordsAboveAverageTag).apply(TextIO.Write.named("Write wordsAboveAverage").to("C:\\TestFiles\\Output\\wordsAboveAverage.txt"));
-        all.get(wordsBelowAverageTag).apply(TextIO.Write.named("Write wordsBelowAverage").to("C:\\TestFiles\\Output\\wordsBelowAverage.txt"));
+        all.get(allWordsTag).apply(TextIO.Write.named("Write All Words").to(filePath + "\\TestFiles\\Output\\allwords.txt"));
+        all.get(wordsAboveAverageTag).apply(TextIO.Write.named("Write wordsAboveAverage").to(filePath + "\\TestFiles\\Output\\wordsAboveAverage.txt"));
+        all.get(wordsBelowAverageTag).apply(TextIO.Write.named("Write wordsBelowAverage").to(filePath + "\\TestFiles\\Output\\wordsBelowAverage.txt"));
 
-        /*p.apply(TextIO.Read.named("Read File").from("C:\\TestFiles\\m.txt"))
+       // p.apply(TextIO.Read.named("Read File").from("C:\\TestFiles\\m.txt"))
 
-                *//* Java 8 lambda implementation of split word, count, concatenation and capitalisation *//*
+                /*//* Java 8 lambda implementation of split word, count, concatenation and capitalisation *//*
                 //.apply(FlatMapElements.via((String w) -> Arrays.asList( w.split("[^a-zA-Z']+"))).withOutputType(new TypeDescriptor<String>() {}))
                 //.apply(MapElements.via((String w) -> w + ": " + String.valueOf(w.length())).withOutputType(new TypeDescriptor<String>() {}))
                 //.apply(MapElements.via((String w) -> w.toUpperCase()).withOutputType(new TypeDescriptor<String>() { }))
 
-                *//* Java normal implementation of split word, count, concatenation and capitalisation *//*
-                //.apply(ParDo.named("ReadingLines").of(new ExtractWordsFn()))
-                //.apply(ParDo.of(new WordCountFn()))
-                //.apply(ParDo.of(new WordToUpperCaseFn()))
+                /* Java normal implementation of split word, count, concatenation and capitalisation
+                .apply(ParDo.named("ReadingLines").of(new ExtractWordsFn()))
+                .apply(ParDo.of(new WordCountFn()))
+                .apply(ParDo.of(new WordToUpperCaseFn()))*/
 
-                *//*Composite Transformation to implementation split word, count, concatenation and capitalisation  *//*
+                /*Composite Transformation to implementation split word, count, concatenation and capitalisation  */
 
 
-                .apply(TextIO.Write.to("C:\\TestFiles\\Output\\b.txt"));*/
+              //  .apply(TextIO.Write.to("C:\\TestFiles\\Output\\b.txt"));
 
 
         p.run();

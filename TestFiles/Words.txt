@@ -1,0 +1,3 @@
+Increased visibility. The Dataflow SDK source code provides insight on how Dataflow programs interact with the managed Dataflow service that Google provides.
+Support for third-party pipeline runners. Releasing the Dataflow SDKs as open source makes it easier for others to provide their own services to run pipelines defined using the Dataflow SDKs. These runners might target different runtime environments or enable Dataflow pipelines to be run on premises, using non-Google Cloud Platform services.
+Transform Modeling. The pre-written transforms in the Dataflow SDKs can provide models or design patterns that the open source community can use to contribute their own transforms to the ecosystem.
