@@ -7,8 +7,11 @@ import com.google.cloud.dataflow.sdk.io.TextIO;
 import com.google.cloud.dataflow.sdk.options.PipelineOptionsFactory;
 import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.GroupByKey;
+import com.google.cloud.dataflow.sdk.transforms.PTransform;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
 import com.google.cloud.dataflow.sdk.values.KV;
+import com.google.cloud.dataflow.sdk.values.PCollection;
+import com.google.cloud.dataflow.sdk.values.PInput;
 import org.apache.avro.reflect.Nullable;
 
 import java.io.File;
@@ -58,44 +61,52 @@ public class GroupingAndJoiningPipeline {
         }
     }
 
+
     public static void main(String[] args) {
 
 
         String filePath = new File("").getAbsolutePath();
-        System.out.println( filePath );
+        System.out.println(filePath);
 
         Pipeline p = Pipeline.create(PipelineOptionsFactory.fromArgs(args).withValidation().create());
 
-        p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\FactFinance2.txt"))
-                .apply(ParDo.named("Get Word Count").of(new DoFn<String, KV<String, FinancialRecord>>() {
-                    @Override
-                    public void processElement(ProcessContext c) throws Exception {
 
-                        String[] line = c.element().split(",");
+        PCollection<KV<String, Iterable<FinancialRecord>>> part1 =
+                p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\FactFinance_Part1.csv"))
+                        .apply(ParDo.named("Get Word Count").of(new ReadRecords()))
+                        .apply(GroupByKey.create());
 
-                        FinancialRecord f = new FinancialRecord(Long.parseLong(line[0]), line[1], line[2], line[3], line[4], line[5], Double.parseDouble(line[6]));
-
-                        //System.out.println(line[5]);
-
-                        c.output(KV.of(line[5], f));
-                    }
-                }))
-                .apply(GroupByKey.create())
-                .apply(ParDo.named("Group By Key").of(new DoFn<KV<String, Iterable<FinancialRecord>>, Void>() {
-                    @Override
-                    public void processElement(ProcessContext c) throws Exception {
-
-                        KV<String, Iterable<FinancialRecord>> i = c.element();
-
-                        String p = "";
-
-
-                    }
-                }));
+        PCollection<KV<String, Iterable<FinancialRecord>>> part2 =
+                p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\FactFinance_Part2.csv"))
+                        .apply(ParDo.named("Get Word Count").of(new ReadRecords()))
+                        .apply(GroupByKey.create());
 
         p.run();
 
 
+    }
+
+    static class ReadRecords extends DoFn<String, KV<String, FinancialRecord>> {
+
+        @Override
+        public void processElement(ProcessContext c) throws Exception {
+
+            String[] line = c.element().split(",");
+
+            FinancialRecord f = new FinancialRecord(Long.parseLong(line[0]), line[1], line[2], line[3], line[4], line[5], Double.parseDouble(line[6]));
+
+            //System.out.println(line[5]);
+
+            c.output(KV.of(line[5], f));
+
+        }
+    }
+
+    static class GroupRecords extends DoFn<KV<String, Iterable<FinancialRecord>>, KV<String, Iterable<FinancialRecord>>>{
+        @Override
+        public void processElement(ProcessContext processContext) throws Exception {
+
+        }
     }
 
 }
