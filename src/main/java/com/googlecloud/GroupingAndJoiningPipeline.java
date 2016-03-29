@@ -73,12 +73,12 @@ public class GroupingAndJoiningPipeline {
 
         PCollection<KV<String, Iterable<FinancialRecord>>> part1 =
                 p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\FactFinance_Part1.csv"))
-                        .apply(ParDo.named("Get Word Count").of(new ReadRecords()))
+                        .apply(ParDo.named("Get Part 1").of(new ReadRecords()))
                         .apply(GroupByKey.create());
 
         PCollection<KV<String, Iterable<FinancialRecord>>> part2 =
                 p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\FactFinance_Part2.csv"))
-                        .apply(ParDo.named("Get Word Count").of(new ReadRecords()))
+                        .apply(ParDo.named("Get Part 2").of(new ReadRecords()))
                         .apply(GroupByKey.create());
 
         p.run();
