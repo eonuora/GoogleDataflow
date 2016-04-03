@@ -9,17 +9,25 @@ import com.google.cloud.dataflow.sdk.transforms.DoFn;
 import com.google.cloud.dataflow.sdk.transforms.GroupByKey;
 import com.google.cloud.dataflow.sdk.transforms.PTransform;
 import com.google.cloud.dataflow.sdk.transforms.ParDo;
+import com.google.cloud.dataflow.sdk.transforms.join.CoGbkResult;
+import com.google.cloud.dataflow.sdk.transforms.join.CoGroupByKey;
+import com.google.cloud.dataflow.sdk.transforms.join.KeyedPCollectionTuple;
 import com.google.cloud.dataflow.sdk.values.KV;
 import com.google.cloud.dataflow.sdk.values.PCollection;
-import com.google.cloud.dataflow.sdk.values.PInput;
+import com.google.cloud.dataflow.sdk.values.PDone;
+import com.google.cloud.dataflow.sdk.values.TupleTag;
 import org.apache.avro.reflect.Nullable;
 
 import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Created by Ekene on 27-Mar-2016.
  */
 public class GroupingAndJoiningPipeline {
+
+    final static TupleTag<Iterable<FinancialRecord>> p1 = new TupleTag<>();
+    final static TupleTag<Iterable<FinancialRecord>> p2 = new TupleTag<>();
 
     @DefaultCoder(AvroCoder.class)
     static class FinancialRecord implements Comparable<FinancialRecord> {
@@ -65,6 +73,7 @@ public class GroupingAndJoiningPipeline {
     public static void main(String[] args) {
 
 
+
         String filePath = new File("").getAbsolutePath();
         System.out.println(filePath);
 
@@ -80,6 +89,14 @@ public class GroupingAndJoiningPipeline {
                 p.apply(TextIO.Read.named("Read File").from(filePath + "\\TestFiles\\FactFinance_Part2.csv"))
                         .apply(ParDo.named("Get Part 2").of(new ReadRecords()))
                         .apply(GroupByKey.create());
+
+
+        PCollection<KV<String, CoGbkResult>> coGbkResultCollection =
+                KeyedPCollectionTuple.of(p1, part1)
+                        .and(p2, part2)
+                        .apply(CoGroupByKey.create());
+
+        coGbkResultCollection.apply(new WriteRecords(filePath + "\\TestFiles\\Output\\Part1andPart2.csv"));
 
         p.run();
 
@@ -102,10 +119,38 @@ public class GroupingAndJoiningPipeline {
         }
     }
 
-    static class GroupRecords extends DoFn<KV<String, Iterable<FinancialRecord>>, KV<String, Iterable<FinancialRecord>>>{
-        @Override
-        public void processElement(ProcessContext processContext) throws Exception {
+    static class WriteRecords extends PTransform< PCollection<KV<String, CoGbkResult>>, PDone> {
 
+        private String output;
+
+        public  WriteRecords(String output)
+        {
+            this.output = output;
+        }
+
+        @Override
+        public PDone apply(PCollection<KV<String, CoGbkResult>> input) {
+
+            PCollection<String> pc = input.apply(ParDo.of(new DoFn<KV<String, CoGbkResult>, String>() {
+                @Override
+                public void processElement(ProcessContext c) throws Exception {
+
+                    String o = c.element().getKey() ;
+
+                    for( Iterable<FinancialRecord> n : c.element().getValue().getAll(p1))
+                        for ( FinancialRecord f : n )
+                            o += "\n\t" + f.Amount;
+
+                    for( Iterable<FinancialRecord> n : c.element().getValue().getAll(p2))
+                        for ( FinancialRecord f : n )
+                            o += "\n\t" + f.Amount;
+
+                    c.output(o);
+
+                }
+            }));
+
+            return pc.apply(TextIO.Write.to(output));
         }
     }
 
