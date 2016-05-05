@@ -1,5 +1,9 @@
 package com.googlecloud;
 
+import com.google.api.client.json.Json;
+import com.google.api.client.json.JsonFactory;
+import com.google.api.client.json.JsonParser;
+import com.google.api.services.bigquery.model.JsonObject;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.TableSchema;
@@ -21,8 +25,9 @@ import com.googlecloud.utils.PubsubTopicOptions;
 import org.joda.time.Duration;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
-
+import org.json.*;
 
 /**
  * Created by Ekene on 03-Apr-2016.
@@ -38,14 +43,46 @@ public class StreamingPubSubToBigQueryPipeline {
          */
         @Override
         public void processElement(ProcessContext c) {
-            c.output(new TableRow().set("string_field", c.element().toString()));
+
+            JSONObject jsonObj = null;
+            try {
+                jsonObj = new JSONObject(c.element());
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            TableRow row = new TableRow();
+
+            row.set("FinanceKey", jsonObj.get("FinanceKey"));
+            row.set("Date", jsonObj.get("DateKey"));
+            row.set("OrganizationName", jsonObj.get("OrganizationName"));
+            row.set("DepartmentGroupName", jsonObj.get("DepartmentGroupName"));
+            row.set("ScenarioName", jsonObj.get("ScenarioName"));
+            row.set("AccountDescription", jsonObj.get("AccountDescription"));
+            row.set("Amount", jsonObj.get("Amount"));
+
+            java.util.Date date = new java.util.Date();
+            row.set("TimeStamp", new Timestamp(date.getTime()).toString());
+
+            c.output(row);
+
+
         }
 
         static TableSchema getSchema() {
             return new TableSchema().setFields(new ArrayList<TableFieldSchema>() {
                 // Compose the list of TableFieldSchema from tableSchema.
                 {
-                    add(new TableFieldSchema().setName("string_field").setType("STRING"));
+                    add(new TableFieldSchema().setName("FinanceKey").setType("INTEGER"));
+                    add(new TableFieldSchema().setName("Date").setType("STRING"));
+                    add(new TableFieldSchema().setName("OrganizationName").setType("STRING"));
+                    add(new TableFieldSchema().setName("DepartmentGroupName").setType("STRING"));
+                    add(new TableFieldSchema().setName("ScenarioName").setType("STRING"));
+                    add(new TableFieldSchema().setName("AccountDescription").setType("STRING"));
+                    add(new TableFieldSchema().setName("Amount").setType("FLOAT"));
+
+                    add(new TableFieldSchema().setName("TimeStamp").setType("STRING"));
+
                 }
             });
         }
@@ -76,6 +113,7 @@ public class StreamingPubSubToBigQueryPipeline {
             e.printStackTrace();
         }
 
+
         String tableSpec = new StringBuilder()
                 .append(options.getProject()).append(":")
                 .append(options.getBigQueryDataset()).append(".")
@@ -87,7 +125,14 @@ public class StreamingPubSubToBigQueryPipeline {
 
         pipeline
                 .apply(PubsubIO.Read.named("Reading from PubSub").timestampLabel("timestamp_ms").subscription(options.getPubsubSubscription()))
-                .apply(Window.named("Window").<String>into(FixedWindows.of(Duration.standardMinutes(1)))
+                .apply(Window.named("Window").<String>into(FixedWindows.of(Duration.standardMinutes(5)))
+                        .triggering(
+                                AfterWatermark.pastEndOfWindow()
+                        )
+                        .withAllowedLateness(Duration.standardHours(1))
+                        .a)
+
+                /*.apply(Window.named("Window").<String>into(FixedWindows.of(Duration.standardMinutes(5)))
                         .triggering(
                                 AfterWatermark.pastEndOfWindow()
                                         .withEarlyFirings(AfterProcessingTime.pastFirstElementInPane()
@@ -95,18 +140,8 @@ public class StreamingPubSubToBigQueryPipeline {
                                         .withLateFirings(AfterProcessingTime.pastFirstElementInPane()
                                                 .plusDelayOf(Duration.standardSeconds(45))))
                         .withAllowedLateness(Duration.standardSeconds(60))
-                        .accumulatingFiredPanes())
-                /*.apply(ParDo.of(new DoFn<String, String>() {
+                        .accumulatingFiredPanes())*/
 
-                    Integer count = 1;
-
-                    @Override
-                    public void processElement(ProcessContext c) throws Exception {
-                        c.output(count + "\t" + c.element());
-
-                        count++;
-                    }
-                }))*/
                 .apply(ParDo.of(new StringToRowConverter()))
                 .apply(BigQueryIO.Write.named("Write to BigQuery").to(tableSpec)
                         .withSchema(StringToRowConverter.getSchema()));

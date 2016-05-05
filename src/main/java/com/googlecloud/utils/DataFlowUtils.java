@@ -233,6 +233,9 @@ public class DataFlowUtils {
         }
 
         Tables tableService = bigQueryClient.tables();
+
+        executeNullIfNotFound(tableService.delete(projectId, datasetId, tableId));
+
         Table table = executeNullIfNotFound(tableService.get(projectId, datasetId, tableId));
         if (table == null) {
             Table newTable = new Table().setSchema(schema).setTableReference(
@@ -243,6 +246,8 @@ public class DataFlowUtils {
                     "Table exists and schemas do not match, expecting: " + schema.toPrettyString()
                             + ", actual: " + table.getSchema().toPrettyString());
         }
+
+
     }
 
     private void setupPubsubTopic(String topic) throws IOException {
@@ -470,8 +475,7 @@ public class DataFlowUtils {
         System.out.println("***********************************************************");
     }
 
-    private static <T> T executeNullIfNotFound(
-            AbstractGoogleClientRequest<T> request) throws IOException {
+    private static <T> T executeNullIfNotFound(AbstractGoogleClientRequest<T> request) throws IOException {
         try {
             return request.execute();
         } catch (GoogleJsonResponseException e) {
