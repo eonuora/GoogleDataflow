@@ -1,0 +1,57 @@
+{
+  "schema": {
+    "fields": [
+      {
+        "type": "INTEGER",
+        "name": "FinanceKey",
+        "mode": "nullable"
+      },
+      {
+        "type": "STRING",
+        "name": "DateKey",
+        "mode": "nullable"
+      },
+      {
+        "type": "STRING",
+        "name": "OrganizationName",
+        "mode": "nullable"
+      },
+      {
+        "type": "STRING",
+        "name": "DepartmentGroupName",
+        "mode": "nullable"
+      },
+      {
+        "type": "STRING",
+        "name": "ScenarioName",
+        "mode": "nullable"
+      },
+      {
+        "type": "STRING",
+        "name": "AccountDescription",
+        "mode": "nullable"
+      },
+      {
+        "type": "FLOAT",
+        "name": "Amount",
+        "mode": "nullable"
+      },
+      {
+        "type": "STRING",
+        "name": "ProcessWindow",
+        "mode": "nullable"
+      },
+      {
+        "type": "TIMESTAMP",
+        "name": "EventTimestamp",
+        "mode": "nullable"
+      },
+      {
+        "type": "TIMESTAMP",
+        "name": "ProcessTimestamp",
+        "mode": "nullable"
+      }
+    ]
+  }
+}
+

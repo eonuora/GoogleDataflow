@@ -101,7 +101,7 @@ public class DataFlowUtils {
             do {
                 try {
                     setupPubsub();
-                    setupBigQueryTable();
+                   // setupBigQueryTable();
                     return;
                 } catch (GoogleJsonResponseException e) {
                     lastException = e;
